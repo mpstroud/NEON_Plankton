@@ -10,7 +10,23 @@ Stack downloaded data files into single .zip file
 library(neonUtilities)
 options(stringsAsFactors=F) # character variables are not converted to factors
 
-stackByTable("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/ARIK/01_input/NEON_par.zip")
+setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/ARIK/01_input")
+
+dpID = "DP1.20063.001"
+  #data product ID will need to be checked online for each parameter
+site = "PRLA"
+  #Will do one site at a time, so we can evaluate QAQC more accurately 
+pack = "expanded"
+  #Always expanded, includes quality metrics for all of the quality assessment and quality control analyses.
+startdate = "2017-09" ; enddate = "2019-11"
+
+apchem <- loadByProduct(dpID, site, package=pack, startdate, enddate, check.size=FALSE)
+
+
+git clone https://github.com/mpStroud/NEON_Plankton.git
+Username: mpStroud
+Password: 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
+
 
 
 ```
