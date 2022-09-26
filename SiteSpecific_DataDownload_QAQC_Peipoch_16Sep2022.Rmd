@@ -5,8 +5,14 @@ date: "9/16/2022"
 output: html_document
 ---
 
+Stack downloaded data files into single .zip file
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(neonUtilities)
+options(stringsAsFactors=F) # character variables are not converted to factors
+
+stackByTable("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/ARIK/01_input/NEON_par.zip")
+
+
 ```
 
 
