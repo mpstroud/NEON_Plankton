@@ -27,7 +27,7 @@ list2env(watquant, .GlobalEnv) #extract each list object into the environment (d
 
 #######save the files to SWRC server########
 write.csv(geo_gaugeWaterColumnRegression, 
-          "geo_gaugeWaterColumnRegression.csv", 
+          "geo_gaugeWaterColumnRegression.csv", #contains regresion parameters and R2
           row.names=F)
 
 write.csv(issueLog_00130, 
@@ -94,6 +94,9 @@ ggplot(ratCurve_data, aes(x=gaugeHeight, y=streamDischarge, color=as.factor(year
 write.csv(sdrc_gaugeDischargeMeas, 
           "sdrc_gaugeDischargeMeas.csv", 
           row.names=F)
+
+
+
 
 ```
 
