@@ -7,7 +7,7 @@ output: html_document
 
 Stack downloaded data files into single .zip file
 ```{r setup, include=FALSE}
-library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(ggplot2)
+library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(ggplot2) 
 options(stringsAsFactors=F) # character variables are not converted to factors
 
 setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/ARIK/01_input")
@@ -46,8 +46,9 @@ write.csv(variables_00130,
           "variables_00130.csv", 
           row.names=F)
 
-############################################################################################################################
-#"csd_continuousDischarge" file contains the actual flow data and can be extremely large for some sites, isolate parameters before downloading
+#######################################################################################################
+#"csd_continuousDischarge" file contains the actual flow data and can be extremely large for some sites 
+#isolate parameters before downloading
 write.csv(csd_continuousDischarge, #this is a long file, it will crash most of the times
           "csd_continuousDischarge.csv", 
           row.names=F)
@@ -64,15 +65,22 @@ years = list(2017,2018,2019,2020,2021,2022)
 for (i in 1:6){
   
      temp_d = subset(wquant_data, year==years[i])
-      write.csv(temp_d,paste(years[i],"_wquant_data_QApass.csv",sep=""))
+      write.csv(temp_d,paste("wquant_data_QApass_",years[i],".csv",sep=""))
        
 } #this takes a while but works...
+
+
+
+
 ###################################################################################################
 ###################################################################################################
 ###################################################################################################
 #note all these datasets do not have a continuous datetime vector, there are breaks that are not filled with NA observations
 
 
+
+
+#now we download rating curve for future inspection
 dpID = "DP4.00133.001" 
 site = "ARIK"
 pack = "expanded"
@@ -94,6 +102,9 @@ ggplot(ratCurve_data, aes(x=gaugeHeight, y=streamDischarge, color=as.factor(year
 write.csv(sdrc_gaugeDischargeMeas, 
           "sdrc_gaugeDischargeMeas.csv", 
           row.names=F)
+
+
+
 
 
 
