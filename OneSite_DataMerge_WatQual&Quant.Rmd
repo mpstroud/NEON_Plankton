@@ -9,11 +9,16 @@ This script must be run after 'OneSite_WatQualDataDownload_withQAQC' & 'OneSite_
 
 
 ```{r setup, include=FALSE}
-library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(EcoHydRology)
+library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(EcoHydRology); library(tidyr)
+library(xts)
 options(stringsAsFactors=F) # character variables are not converted to factors
 
 setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/ARIK/01_input")
+```
 
+
+
+```{r}
 ########need to readjust per each year###########################
   
   wat_quant = read.csv("wquant_data_QApass_2017.csv", header = T)
@@ -22,7 +27,6 @@ setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONDat
 
 #################################################################
 
-
 #Perform the baseflow separation using the EcoHydRology package for each water year. This will return a 2 column data frame with nrow = length of input streamflow data. The first column contains baseflow, while the second contains quickflow, both in the same units as the input.
 
   temp = BaseflowSeparation(wat_quant$withParaUncQMean, filter_parameter = 0.925, passes = 3)
@@ -30,87 +34,58 @@ setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONDat
       wat_quant$withParaUncQMean_Propbase = ((wat_quant$withParaUncQMean - wat_quant$withParaUncQMean_base)
                                                     /wat_quant$withParaUncQMean) #percent of instant flow classified as baseflow
 
-#merge nito clean,smaller data set
+#create subsets of water qual and quant datasets and merge them by datetime
 
-merged_data = data.frame(matrix(ncol=0,nrow=nrow(wat_quant)))
+wat_quant_subset = data.frame(matrix(ncol=0,nrow=nrow(wat_quant)))
 
-merged_data$siteID = wat_quant$siteID
-merged_data$datetime = wat_quant$endDate
-merged_data$meanFlow = wat_quant$withParaUncQMean
-merged_data$sdFlow = wat_quant$withParaUncQStdDev
-merged_data$propBaseFlow = wat_quant$withParaUncQMean_Propbase
-
+wat_quant_subset$datetime = wat_quant$endDate
+wat_quant_subset$meanFlow = wat_quant$withParaUncQMean
+wat_quant_subset$sdFlow = wat_quant$withParaUncQStdDev
+wat_quant_subset$propBaseFlow = wat_quant$withParaUncQMean_Propbase
 
 
+wat_qual_subset = data.frame(matrix(ncol=0,nrow=nrow(wat_qual)))
+
+wat_qual_subset$datetime = wat_qual$startDateTime
+wat_qual_subset$chlorophyll = wat_qual$chlorophyll
+wat_qual_subset$chl_unc = wat_qual$chlorophyllExpUncert
+wat_qual_subset$turbidity = wat_qual$turbidity
+wat_qual_subset$turb_unc = wat_qual$turbidityExpUncert
+
+#both datasets are at 1-min interval, and not necessarily the same one, 
+#aggregate each dataset to 5-minute intervals
+
+wat_quant_subset$datetime = as.POSIXct(wat_quant_subset$datetime, format = "%Y-%m-%d %H:%M:%S")
+wat_quant_subset = complete.cases(wat_quant_subset)
+
+qxts <- xts(wat_quant_subset[,2:4], order.by=wat_quant_subset[,1])
+
+period.apply(qxts, endpoints(qxts, "minutes", 15), mean)
 
 
-dpID = "DP1.20288.001" #for water quality
 
-site = "ARIK"
-  #Will do one site at a time, so we can evaluate QAQC more accurately 
-pack = "expanded"
-  #Always expanded, includes quality metrics for all of the quality assessment and quality control analyses.
-startdate = "2017-01" ; enddate = "2022-09"
 
-watqual <- loadByProduct(dpID, site, package=pack, startdate, enddate, check.size=FALSE) #returns a list with all data frames
-list2env(watqual, .GlobalEnv) #extract each list object into the environment (don't do this if working with multiple sites)
 
-#######save the files to SWRC server########
-write.csv(ais_maintenance, 
-          "ais_maintenance.csv", 
-          row.names=F)
+class(wat_quant_subset$datetime)
 
-write.csv(ais_multisondeCleanCal, 
-          "ais_multisondeCleanCal.csv", 
-          row.names=F)
+ timeAverage(wat_quant_subset, avg.time = "5 min", fill = F)
 
-write.csv(issueLog_20288, 
-          "issueLog_20288.csv", 
-          row.names=F)
 
-write.csv(readme_20288, 
-          "readme_20288.csv", 
-          row.names=F)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ wat_quant_subset
 
-write.csv(sensor_positions_20288, 
-          "sensor_positions_20288.csv", 
-          row.names=F)
+wat_qual_subset = wat_qual_subset[!is.na(wat_qual_subset$chlorophyll),]
 
-write.csv(variables_20288, 
-          "variables_20288.csv", 
-          row.names=F)
-############################################################################################################################
-#"waq_instantaneous" file contains the actual data and can be extremely large for some sites, isolate parameters before downloading
-write.csv(waq_instantaneous, #this is a long file, it will crash most of the times
-          "waq_instantaneous.csv", 
-          row.names=F)
-
-#################Split waq_instantaneous file into multiple years
-
-wq_data = waq_instantaneous %>%
-  select(startDateTime, 
-         sensorDepth, sensorDepthExpUncert, sensorDepthFinalQF, sensorDepthFinalQFSciRvw,
-         dissolvedOxygen, dissolvedOxygenExpUncert, dissolvedOxygenFinalQF, dissolvedOxygenFinalQFSciRvw, 
-         localDissolvedOxygenSat, localDOSatExpUncert, localDOSatFinalQF, localDOSatFinalQFSciRvw,
-         chlorophyll, chlorophyllExpUncert, chlorophyllFinalQF, chlorophyllFinalQFSciRvw,
-         turbidity, turbidityExpUncert, turbidityFinalQF, turbidityFinalQFSciRvw) %>%
-  filter(chlorophyllFinalQF == 0 & turbidityFinalQF == 0) %>% #filter by chl and turbidity values of acceptable quality
-  mutate(datetime = as.POSIXct(startDateTime, format = "%m/%d/%Y %H:%M:%S"),
-          year = year(datetime))
-
-years = list(2017,2018,2019,2020,2021,2022)
-
-for (i in 1:6){
-  
-     temp_d = subset(wq_data, year==years[i])
-      write.csv(temp_d,paste(years[i],"_wq_data_QApass.csv",sep=""))
-       
-} #this takes a while but works...
-###################################################################################################
-###################################################################################################
-###################################################################################################
-#note all these datasets do not have a continuous datetime vector, there are breaks that are not filled with NA observations
-
+merged_data = left_join(merged_data,wat_qual,by="datetime")
 
 
 ```
