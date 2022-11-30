@@ -9,8 +9,8 @@ This script must be run after 'OneSite_WatQualDataDownload_withQAQC' & 'OneSite_
 
 
 ```{r setup, include=FALSE}
-library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(EcoHydRology); library(tidyr)
-library(xts)
+library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(EcoHydRology); library(tidyr) ; 
+library(xts) ; library(lubridate)
 options(stringsAsFactors=F) # character variables are not converted to factors
 
 setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/ARIK/01_input")
@@ -21,9 +21,9 @@ setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONDat
 ```{r}
 ########need to readjust per each year###########################
   
-  wat_quant = read.csv("wquant_data_QApass_2017.csv", header = T)
+  wat_quant = read.csv("wquant_data_QApass_2022.csv", header = T)
   
-  wat_qual = read.csv("wq_data_QApass_2017.csv", header = T)
+  wat_qual = read.csv("wq_data_QApass_2022.csv", header = T)
 
 #################################################################
 
@@ -56,36 +56,39 @@ wat_qual_subset$turb_unc = wat_qual$turbidityExpUncert
 #aggregate each dataset to 5-minute intervals
 
 wat_quant_subset$datetime = as.POSIXct(wat_quant_subset$datetime, format = "%Y-%m-%d %H:%M:%S")
-wat_quant_subset = complete.cases(wat_quant_subset)
-
-qxts <- xts(wat_quant_subset[,2:4], order.by=wat_quant_subset[,1])
-
-period.apply(qxts, endpoints(qxts, "minutes", 15), mean)
-
-
-
-
-
-class(wat_quant_subset$datetime)
-
- timeAverage(wat_quant_subset, avg.time = "5 min", fill = F)
+wat_quant_subset = na.omit(wat_quant_subset) #remove NAs or xts object will crash
+qxts <- xts(wat_quant_subset[,2:4], order.by=wat_quant_subset[,1]) #create xts object
+wat_quant_subset_avg = period.apply(qxts, endpoints(qxts, "minutes", 5), mean) #average every 5 minutes 
+wat_quant_subset_avg = as.data.frame(wat_quant_subset_avg) #reverse to data frame and fix the datetime vector
+wat_quant_subset_avg$datetime = row.names(wat_quant_subset_avg) ; row.names(wat_quant_subset_avg) = NULL
+wat_quant_subset_avg$datetime = as.POSIXct(wat_quant_subset_avg$datetime, #format datetime vector to round to neares 5min using lubridate::round_date
+                                          format = "%Y-%m-%d %H:%M:%S")
+wat_quant_subset_avg$datetime = round_date(wat_quant_subset_avg$datetime,unit="5 minutes")
 
 
+
+wat_qual_subset$datetime = as.POSIXct(wat_qual_subset$datetime, format = "%Y-%m-%d %H:%M:%S")
+wat_qual_subset = na.omit(wat_qual_subset) #remove NAs or xts object will crash
+qxts <- xts(wat_qual_subset[,2:5], order.by=wat_qual_subset[,1]) #create xts object
+wat_qual_subset_avg = period.apply(qxts, endpoints(qxts, "minutes", 5), mean) #average every 5 minutes 
+wat_qual_subset_avg = as.data.frame(wat_qual_subset_avg) #reverse to data frame and fix the datetime vector
+wat_qual_subset_avg$datetime = row.names(wat_qual_subset_avg) ; row.names(wat_qual_subset_avg) = NULL
+wat_qual_subset_avg$datetime = as.POSIXct(wat_qual_subset_avg$datetime, #format datetime vector to round to neares 5min using lubridate::round_date
+                                          format = "%Y-%m-%d %H:%M:%S")
+wat_qual_subset_avg$datetime = round_date(wat_qual_subset_avg$datetime,unit="5 minutes")
  
- 
- 
- 
- 
- 
- 
- 
- 
- 
- wat_quant_subset
+```
 
-wat_qual_subset = wat_qual_subset[!is.na(wat_qual_subset$chlorophyll),]
 
-merged_data = left_join(merged_data,wat_qual,by="datetime")
+
+```{r}
+#merge datasets by datetime
+final_merged_data_5min = left_join(wat_qual_subset_avg,wat_quant_subset_avg,by="datetime")
+
+write.csv(final_merged_data_5min, 
+          "R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/ARIK/03_incremental/final_data_5min_2022.csv", 
+          row.names=F)
+
 
 
 ```

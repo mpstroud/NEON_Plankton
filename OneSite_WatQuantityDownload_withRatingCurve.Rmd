@@ -48,10 +48,8 @@ write.csv(variables_00130,
 
 #######################################################################################################
 #"csd_continuousDischarge" file contains the actual flow data and can be extremely large for some sites 
-#isolate parameters before downloading
-write.csv(csd_continuousDischarge, #this is a long file, it will crash most of the times
-          "csd_continuousDischarge.csv", 
-          row.names=F)
+#isolate parameters before downloading. This is a long file, it will crash most of the times
+  
 
 #################Split csd_continuousDischarge file into multiple years
 
@@ -93,7 +91,6 @@ list2env(ratCurve, .GlobalEnv) #extract each list object into the environment (d
 ratCurve_data = sdrc_gaugeDischargeMeas %>% 
   mutate(datetime = as.POSIXct(endDate, format = "%m/%d/%Y %H:%M:%S"),
           year = year(datetime)) #These are organized by water year, I'll take the end of each year (e..g, 2016-2017 year is coded as 2017)
-summary(as.factor(temp_data$regressionID)) #to assess what anual rating curve is being used
 
 ggplot(ratCurve_data, aes(x=gaugeHeight, y=streamDischarge, color=as.factor(year))) + 
   geom_point()
