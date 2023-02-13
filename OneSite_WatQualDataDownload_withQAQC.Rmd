@@ -10,13 +10,13 @@ Stack downloaded data files into single .zip file
 library(neonUtilities) ; library(dplyr) ; library(lubridate)
 options(stringsAsFactors=F) # character variables are not converted to factors
 
-setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/KING/01_input")
+setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/WLOU/01_input")
 
 dpID = "DP1.20288.001" #for water quality
 #In situ sensor-based specific conductivity, concentration of chlorophyll a, dissolved oxygen content, fDOM concentration, pH, and turbidity, available as one- or five-minute instantaneous measurements in surface water of lakes, wadeable streams, and non-wadeable streams
   #data product ID will need to be checked online for each parameter
 
-site = "KING"
+site = "WLOU"
   #Will do one site at a time, so we can evaluate QAQC more accurately 
 pack = "expanded"
   #Always expanded, includes quality metrics for all of the quality assessment and quality control analyses.
