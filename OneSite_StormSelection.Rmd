@@ -10,7 +10,7 @@ patterns of hysteresis loops and validated they were indeed storm vents (signifc
 ```{r setup, include=FALSE}
 library(ggplot2) ; library(dplyr) ; library(scales)
 
-site="LEWI"
+site="REDB"
 
 setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product",sep=""))
 Storms_2017 = read.csv("Chlorophyll_2017/chl_AllCQData.csv", header = T)
@@ -43,9 +43,9 @@ for (i in 1:length(storm_numb)) {
 This code corrects the mismatch in storm_ID dates that I discovered while compiling the chl_HysteresisData results for the selected events. THe dates and storm_ID in the cha_AllCQData file are the one that matched the rawt data and the ones I used above for visual inspection. Therefore, the following code will use the datetime per storm_ID from the the cha_AllCQData file to then subset the selected events in chl_HysteresisData using the datetime factor, and not the storm_ID
 ```{r}
 ####################parameters to adjust
-site = "BLWA"
-year = "2022"
-selected_storms = paste0('storm_',c(24,23,9,2))
+site = "KING"
+year = "2018"
+selected_storms = paste0('storm_',c(24,22,21,18))
 ###########################################
 
 

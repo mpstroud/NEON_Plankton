@@ -9,7 +9,7 @@ Input data files and format the into requried cQ format
 ```{r setup, include=FALSE}
 library(zoo) ; library(tidyr) ; library(lubridate) ; library(dplyr)
 
-site="LEWI"
+site="REDB"
 
 
 setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental",sep=""))
@@ -507,13 +507,13 @@ cQ analysis for chlorophyll & Turbidity/year/site following (Millar et al. 2021)
 ```{r setup, include=FALSE}
 library(tidyverse) ; library(viridis)
 
-site="LEWI"
+site="REDB"
 year="2021"
 
 # Vector containing candidate baseflow separation filter values
 candidateFilterPara <- c(0.98)
 # Vector containing candidate stormflow threshold values
-candidateSfThresh <- c(0.05)
+candidateSfThresh <- c(0.01)
 
 ###################
 # SET DIRECTORIES #
@@ -731,7 +731,7 @@ makeHystFlushPlotsTurb(hysteresisData1)
 
 cQ analysis for turbidity/year/site following (Millar et al. 2021)
 ```{r setup, include=FALSE}
-library(tidyverse) ; library(viridis)
+
 
 # Main script to separate baseflow, delineate storm events, 
 # and run c-Q hysteresis index analyses
@@ -739,13 +739,13 @@ library(tidyverse) ; library(viridis)
 # Clear memory
 rm(list=ls())
 
-site="LEWI"
+site="REDB"
 year="2021"
 
 # Vector containing candidate baseflow separation filter values
 candidateFilterPara <- c(0.98)
 # Vector containing candidate stormflow threshold values
-candidateSfThresh <- c(0.05)
+candidateSfThresh <- c(0.01)
 
 ###################
 # SET DIRECTORIES #
