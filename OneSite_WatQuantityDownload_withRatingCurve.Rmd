@@ -16,7 +16,7 @@ dpID = "DP4.00130.001" #for continuous discharge
 #Continuous measurements of stream discharge calculated from a stage-discharge rating curve and sensor-based measurements of water surface elevation
   #data product ID will need to be checked online for each parameter
 
-site = "ARIK"
+site = "KING"
   #Will do one site at a time, so we can evaluate rating curve more accurately 
 pack = "expanded"
   #Always expanded, includes quality metrics for all of the quality assessment and quality control analyses.
@@ -80,7 +80,7 @@ for (i in 1:6){
 
 #now we download rating curve for future inspection
 dpID = "DP4.00133.001" 
-site = "ARIK"
+site = "KING"
 pack = "expanded"
 startdate = "2017-01" ; enddate = "2022-09"
 
