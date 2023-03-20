@@ -1,0 +1,347 @@
+---
+title: "One Site Water Quality Data Collection"
+author: "Marc Peipoch"
+date: "9/16/2022"
+output: html_document
+---
+
+Stack downloaded data files into single .zip file
+```{r setup, include=FALSE}
+library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(tidyr)
+options(stringsAsFactors=F) # character variables are not converted to factors
+
+site = "LECO"
+  #Will do one site at a time
+
+
+
+
+setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/01_input",sep=""))
+
+dpID = "DP1.20166.001" #for periphyton, seston, and phytoplankton collection
+#This data product contains the quality-controlled, native sampling resolution data from NEON's aquatic periphyton and phytoplankton collection and field metadata, as well as associated taxonomic, and enumeration data provided by contracted labs. Benthic and water column field samples are collected in wadeable streams, rivers, and lakes three times per year during the growing season. 
+
+pack = "expanded"
+  #Always expanded, includes quality metrics for all of the quality assessment and quality control analyses.
+startdate = "2017-01" ; enddate = "2022-09"
+
+memory.limit(size=50000) #to set a higher value fpr memory use limit
+
+benthicColl <- loadByProduct(dpID, site, package=pack, startdate, enddate, check.size=FALSE) #returns a list with all data frames
+list2env(benthicColl, .GlobalEnv) #extract each list object into the environment (don't do this if working with multiple sites)
+
+#######save the files to SWRC server########
+write.csv(alg_fieldData, 
+          "alg_fieldData_Collection.csv", 
+          row.names=F)
+
+write.csv(alg_biomass, 
+          "alg_biomass.csv", 
+          row.names=F)
+
+write.csv(alg_taxonomyProcessed, 
+          "alg_taxonomyProcessed.csv", 
+          row.names=F)
+
+write.csv(alg_taxonomyRaw, 
+          "alg_taxonomyRaw.csv", 
+          row.names=F)
+
+write.csv(alg_qualityCheck, 
+          "alg_qualityCheck.csv", 
+          row.names=F)
+
+write.csv(alg_biovolumes, 
+          "alg_biovolumes.csv", 
+          row.names=F)
+############################################################################################################################
+
+dpID = "DP1.20163.001" #for Periphyton, seston, and phytoplankton chemical properties
+#Carbon (C), nitrogen (N), phosphorus (P), isotopes, chlorophyll a, and pheophytin of periphyton and phytoplankton from benthic and water column samples in lakes, rivers, and wadeable streams
+
+
+benthicProp <- loadByProduct(dpID, site, package=pack, startdate, enddate, check.size=FALSE) #returns a list with all data frames
+list2env(benthicProp, .GlobalEnv) #extract each list object into the environment (don't do this if working with multiple sites)
+
+#######save the files to SWRC server########
+write.csv(alg_fieldData, 
+          "alg_fieldData_Properties.csv", 
+          row.names=F)
+
+write.csv(alg_domainLabChemistry, 
+          "alg_domainLabChemistry.csv", 
+          row.names=F)
+
+write.csv(alg_algaeExternalLabDataPerSample, 
+          "alg_algaeExternalLabDataPerSample.csv", 
+          row.names=F)
+
+write.csv(alg_algaeExternalLabQA, 
+          "alg_algaeExternalLabQA.csv", 
+          row.names=F)
+
+write.csv(asi_externalLabPOMSummaryData, 
+          "asi_externalLabPOMSummaryData.csv", 
+          row.names=F)
+
+############################################################################################################################
+
+```
+
+Taxonomic Data___________________________________________________________________________________
+Generate three species abundance matrices [division, family, and genus], that are ready for analysis. That is, each phyla as a column, and each row represent one sample.date. In each matrix the first row will be sample date and can be removed prior to multivariate analysis 
+```{r}
+site = "MCDI"
+  #Will do one site at a time
+
+setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/01_input",sep=""))
+
+#The taxonomic count data with algalParameterUnit = cellsPerBottle are not corrected for preservative volume or benthic area. Data users will need to refer to the benthicArea presented in the alg_fieldData table and apply this correction to get the number of algal cells per stream, lake, or river bottom. All taxon records from a sample should be summed and divided by the benthicArea prior to reporting the total abundance per m2.
+
+alg_fieldData = read.csv("alg_fieldData_Collection.csv")
+alg_biomass = read.csv("alg_biomass.csv")
+alg_taxonomyProcessed = read.csv("alg_taxonomyProcessed.csv")
+
+#join biomass and fieldData tables
+alg_fieldData_biomass = inner_join(alg_fieldData,alg_biomass, by="parentSampleID")
+
+
+#######GROUPED RESULTS BY DIVISION##############################################
+
+alg_tax_grouped = alg_taxonomyProcessed %>%
+  filter(algalParameter == "cell density") %>%
+  mutate(volCorr_density = (algalParameterValue/perBottleSampleVolume)) %>%
+  group_by(collectDate, sampleID, division) %>%
+  summarise(total_by_division = sum(volCorr_density)) #units for volCorr_densityar countPermL
+  
+#join alg_fieldData_biomass and taxonomy data tables
+alg_taxonomy_fieldbiomass = left_join(alg_tax_grouped,alg_fieldData_biomass, by="sampleID")
+#note the mismatch in row number due to duplication of AFDM and taxonomy rows (which share the same sampleID)
+#I'll check this every time to be sure
+alg_taxonomy_fieldbiomass_filt = alg_taxonomy_fieldbiomass %>%
+  filter(analysisType == "taxonomy")
+if((nrow(alg_tax_grouped)) == (nrow(alg_taxonomy_fieldbiomass_filt))) {print("match")}
+
+#correct for benthic area and sample volume the periphyton samples and leave as they are the seston ones and save the file in incremental folder 
+division_taxonomy_all = alg_taxonomy_fieldbiomass_filt %>%
+  mutate(algalCountPermL = 
+           ifelse(algalSampleType == "seston" | algalSampleType == "phytoplankton",
+                  total_by_division,
+                  ((total_by_division*(fieldSampleVolume/benthicArea))))/1000000) 
+                  #units for benthic counts are in countsx106 * m-2
+
+write.csv(division_taxonomy_all, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/division_taxonomy_all.csv",sep=""), 
+          row.names=F)
+
+#subset the important variables and save two products: a vertical matrix with countData and species abundance matrices 
+division_taxonomy_subset = division_taxonomy_all %>%
+  select(collectDate, sampleID,algalSampleType, division, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
+
+write.csv(division_taxonomy_subset, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/division_taxonomy_subset.csv",sep=""), 
+          row.names=F)
+
+sp_ab_matrix_periphyton_division = division_taxonomy_subset %>% 
+  filter(algalSampleType == "epilithon")  %>% 
+  select(sampleID,division, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(division, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_periphyton_division[,3:ncol(sp_ab_matrix_periphyton_division)] =
+round(sp_ab_matrix_periphyton_division[,3:ncol(sp_ab_matrix_periphyton_division)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_periphyton_division, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_division.csv",sep=""), 
+          row.names=F) 
+  
+  
+  
+  
+  
+  
+  
+
+#######GROUPED RESULTS BY FAMILY################################################
+
+alg_tax_grouped = alg_taxonomyProcessed %>%
+  filter(algalParameter == "cell density") %>%
+  mutate(volCorr_density = (algalParameterValue/perBottleSampleVolume)) %>%
+  group_by(collectDate, sampleID, family) %>%
+  summarise(total_by_family = sum(volCorr_density)) #units for volCorr_densityar countPermL
+  
+#join alg_fieldData_biomass and taxonomy data tables
+alg_taxonomy_fieldbiomass = left_join(alg_tax_grouped,alg_fieldData_biomass, by="sampleID")
+#note the mismatch in row number due to duplication of AFDM and taxonomy rows (which share the same sampleID)
+#I'll check this every time to be sure
+alg_taxonomy_fieldbiomass_filt = alg_taxonomy_fieldbiomass %>%
+  filter(analysisType == "taxonomy")
+if((nrow(alg_tax_grouped)) == (nrow(alg_taxonomy_fieldbiomass_filt))) {print("match")}
+
+#correct for benthic area and sample volume the periphyton samples and leave as they are the seston ones and save the file in incremental folder 
+family_taxonomy_all = alg_taxonomy_fieldbiomass_filt %>%
+  mutate(algalCountPermL = 
+           ifelse(algalSampleType == "seston" | algalSampleType == "phytoplankton",
+                  total_by_family,
+                  ((total_by_family*(fieldSampleVolume/benthicArea))))/1000000) 
+                  #units for benthic counts are in countsx106 * m-2
+
+write.csv(family_taxonomy_all, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/family_taxonomy_all.csv",sep=""), 
+          row.names=F)
+
+#subset the important variables and save two products: a vertical matrix with countData and species abundance matrices 
+family_taxonomy_subset = family_taxonomy_all %>%
+  select(collectDate, sampleID, algalSampleType, family, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
+
+write.csv(family_taxonomy_subset, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/family_taxonomy_subset.csv",sep=""), 
+          row.names=F)
+
+sp_ab_matrix_periphyton_family = family_taxonomy_subset %>% 
+  filter(algalSampleType == "epilithon")  %>% 
+  select(sampleID,family, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(family, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_periphyton_family[,3:ncol(sp_ab_matrix_periphyton_family)] =
+round(sp_ab_matrix_periphyton_family[,3:ncol(sp_ab_matrix_periphyton_family)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_periphyton_family, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_family.csv",sep=""), 
+          row.names=F) 
+  
+
+
+
+
+
+
+
+
+#######GROUPED RESULTS BY GENUS#################################################
+
+alg_tax_grouped = alg_taxonomyProcessed %>%
+  filter(algalParameter == "cell density") %>%
+  mutate(volCorr_density = (algalParameterValue/perBottleSampleVolume)) %>%
+  group_by(collectDate, sampleID, genus) %>%
+  summarise(total_by_genus = sum(volCorr_density)) #units for volCorr_densityar countPermL
+  
+#join alg_fieldData_biomass and taxonomy data tables
+alg_taxonomy_fieldbiomass = left_join(alg_tax_grouped,alg_fieldData_biomass, by="sampleID")
+#note the mismatch in row number due to duplication of AFDM and taxonomy rows (which share the same sampleID)
+#I'll check this every time to be sure
+alg_taxonomy_fieldbiomass_filt = alg_taxonomy_fieldbiomass %>%
+  filter(analysisType == "taxonomy")
+if((nrow(alg_tax_grouped)) == (nrow(alg_taxonomy_fieldbiomass_filt))) {print("match")}
+
+#correct for benthic area and sample volume the periphyton samples and leave as they are the seston ones and save the file in incremental folder 
+genus_taxonomy_all = alg_taxonomy_fieldbiomass_filt %>%
+  mutate(algalCountPermL = 
+           ifelse(algalSampleType == "seston" | algalSampleType == "phytoplankton",
+                  total_by_genus,
+                  ((total_by_genus*(fieldSampleVolume/benthicArea))))/1000000) 
+                  #units for benthic counts are in countsx106 * m-2
+
+write.csv(genus_taxonomy_all, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/genus_taxonomy_all.csv",sep=""), 
+          row.names=F)
+
+#subset the important variables and save two products: a vertical matrix with countData and species abundance matrices 
+genus_taxonomy_subset = genus_taxonomy_all %>%
+  select(collectDate, sampleID, algalSampleType, genus, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
+
+write.csv(genus_taxonomy_subset, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/genus_taxonomy_subset.csv",sep=""), 
+          row.names=F)
+
+sp_ab_matrix_periphyton_genus = genus_taxonomy_subset %>% 
+  filter(algalSampleType == "epilithon")  %>% 
+  select(sampleID,genus, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(genus, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_periphyton_genus[,3:ncol(sp_ab_matrix_periphyton_genus)] =
+round(sp_ab_matrix_periphyton_genus[,3:ncol(sp_ab_matrix_periphyton_genus)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_periphyton_genus, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_genus.csv",sep=""), 
+          row.names=F) 
+  
+
+
+
+
+```
+
+
+Biomass Data___________________________________________________________________________________
+Datasets for AFDM, chlorophyll, pheophytin, total carbon, total nitrogen, total phosphorus, 13C isotopes, 15N isotopes
+UNLIKE TAXONOMY, Chemical analyses of periphyton are separated by epilithon, epixylon, epipelon, epipsammon, epiphyton
+```{r}
+site = "MCDI"
+  #Will do one site at a time
+
+setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/01_input",sep=""))
+
+
+alg_fieldData = read.csv("alg_fieldData_Collection.csv")
+alg_chemistry = read.csv("alg_domainLabChemistry.csv")
+alg_samples = read.csv("alg_algaeExternalLabDataPerSample.csv")
+
+#first we only take the variables of interest from each table before merging since these are very large tables 
+
+alg_samples_subset= alg_samples %>%
+  select(collectDate, sampleID,analyte,analyteConcentration)
+
+alg_chemistry_subset= alg_chemistry %>%
+  select(collectDate,parentSampleID, sampleID, fieldSampleVolume)
+
+alg_fieldData_subset= alg_fieldData %>%
+  select(collectDate,parentSampleID, benthicArea)
+
+
+#join sample concentration and chemistry tables
+alg_chem_samples = left_join(alg_samples_subset,alg_chemistry_subset, by="sampleID")
+
+#join merged table with field data table
+alg_full_samples = left_join(alg_chem_samples,alg_fieldData_subset, by="parentSampleID")
+
+alg_full_samples = alg_full_samples %>%
+  select(collectDate, sampleID, analyte, 
+         analyteConcentration,fieldSampleVolume,benthicArea)
+
+#this is the dataset to work for the areal abundance calculation 
+
+
+#For peiphyton will be multiplying each concentration per sample volume and dividing by benthic area, except for C and N isotopes. For seston analyte concentration shoul dbe good to go as it is in m V-3.
+
+#correct for benthic area and sample volume the periphyton samples and leave as they are the seston ones and save the file in incremental folder 
+alg_chem_all = alg_full_samples %>%
+  mutate(algalConc = 
+           ifelse(is.na(benthicArea),
+                  analyteConcentration, 
+                  (analyteConcentration*((fieldSampleVolume/1000)/benthicArea)))) %>%
+group_by(collectDate, sampleID, analyte) %>%
+    summarise(algalConc = mean(algalConc, na.omit(TRUE))) 
+#units for benthic are in Mass per M-2
+#units for isotopes and seston are in Mass per L or those detailed in alg_algaeExternalLabDataPerSample file
+
+
+write.csv(alg_chem_all, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/alg_chem_all.csv",sep=""), 
+          row.names=F)
+
+
+
+
+
+
+
+```
