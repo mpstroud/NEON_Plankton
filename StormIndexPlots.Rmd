@@ -1,0 +1,81 @@
+---
+title: "StormIndexPlots"
+author: "Marc Peipoch"
+date: '2023-02-14'
+output: html_document
+---
+
+Merge all files per site/year/parameter in 2 files (chl and turbidity) 
+```{r setup, include=FALSE}
+library(RColorBrewer)
+setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/04_product")
+
+data = read.csv("Chl_Turb_index_byStorm_2017_2022.csv")
+
+#first substitute all the negative FI turbidity values with NAs
+data$meanFI.turb = replace(data$meanFI.turb, which(data$meanFI.turb < 0), NA)
+  
+#plot per domain/sie
+sub_data = data %>%
+  filter(site %in% c("BLWA","MAYF"))
+
+ggplot(sub_data, aes(x=meanHI.Chl, y=meanFI.Chl, color=site)) + 
+  geom_point(aes(size=event_intensity_m3hr)) +
+  scale_size_continuous(breaks = c(500, 2500, 100000, 200000),range = c(3,7)) + 
+  xlim(-1,1) + ylim(-1,1) +
+  scale_colour_manual(values = c("#CC9966", "#336666")) + 
+  theme_bw()
+
+ggplot(sub_data, aes(x=meanHI.turb, y=meanFI.turb, color=site)) + 
+  geom_point(aes(size=event_intensity_m3hr)) +
+  scale_size_continuous(range = c(3,7)) + 
+  xlim(-1,1) + ylim(-1,1) +
+  scale_colour_manual(values = c("#CC9966", "#669999","#336666", "#FFCC99")) + 
+  theme_bw()
+
+ggplot(sub_data, aes(x=meanHI.turb, y=meanFI.turb, color=site)) + 
+  geom_point(aes(size=event_intensity_m3hr)) +
+  scale_size_continuous(range = c(3,7)) + 
+  xlim(-1,1) + ylim(-1,1) +
+  scale_colour_manual(values = c("#CC9966", "#669999","#336666", "#FFCC99")) + 
+  theme_bw()
+
+
+#CC9966 marro fosc
+#669999 blau clar
+#336666 blau fosc
+#FFCC99 marro clar
+
+
+
+#boxplot per domain/sie
+library(ggpubr)
+theme_set(theme_pubr())
+
+###################################
+sub_data = data %>%
+  filter(site %in% c("CUPE","GUIL"))
+
+a = ggplot(sub_data, aes(x=site, y=meanHI.Chl, fill=site)) +
+    geom_boxplot() +
+    scale_fill_manual(values = c("#FFCC00", "#FF6600")) +  
+    theme_classic() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +  ylim(-1,1) 
+
+b = ggplot(sub_data, aes(x=site, y=meanFI.Chl, fill=site)) +
+    geom_boxplot() +
+    scale_fill_manual(values = c("#FFCC00", "#FF6600")) +  
+    theme_classic() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +  ylim(-1,1) 
+
+ggarrange(a, b, labels = c("A", "B"),
+                    ncol = 2, nrow = 1)
+
+```
+
