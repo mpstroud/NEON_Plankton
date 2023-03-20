@@ -91,7 +91,7 @@ write.csv(asi_externalLabPOMSummaryData,
 Taxonomic Data___________________________________________________________________________________
 Generate three species abundance matrices [division, family, and genus], that are ready for analysis. That is, each phyla as a column, and each row represent one sample.date. In each matrix the first row will be sample date and can be removed prior to multivariate analysis 
 ```{r}
-site = "MCDI"
+site = "LECO"
   #Will do one site at a time
 
 setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/01_input",sep=""))
@@ -157,12 +157,34 @@ write.csv(sp_ab_matrix_periphyton_division,
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_division.csv",sep=""), 
           row.names=F) 
   
+sp_ab_matrix_seston_division = division_taxonomy_subset %>% 
+  filter(algalSampleType %in%  c("seston","phytoplankton"))  %>% 
+  select(sampleID,division, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(division, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_seston_division[,3:ncol(sp_ab_matrix_seston_division)] =
+round(sp_ab_matrix_seston_division[,3:ncol(sp_ab_matrix_seston_division)], 
+      digits = 0)
   
-  
-  
-  
-  
-  
+write.csv(sp_ab_matrix_seston_division, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_seston_division.csv",sep=""), 
+          row.names=F) 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #######GROUPED RESULTS BY FAMILY################################################
 
@@ -215,6 +237,28 @@ write.csv(sp_ab_matrix_periphyton_family,
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_family.csv",sep=""), 
           row.names=F) 
   
+sp_ab_matrix_seston_family = family_taxonomy_subset %>% 
+  filter(algalSampleType %in%  c("seston","phytoplankton"))  %>% 
+  select(sampleID,family, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(family, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_seston_family[,3:ncol(sp_ab_matrix_seston_family)] =
+round(sp_ab_matrix_seston_family[,3:ncol(sp_ab_matrix_seston_family)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_seston_family, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_seston_family.csv",sep=""), 
+          row.names=F) 
+    
+
+
+
+
+
+
+
 
 
 
@@ -274,6 +318,23 @@ write.csv(sp_ab_matrix_periphyton_genus,
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_genus.csv",sep=""), 
           row.names=F) 
   
+sp_ab_matrix_seston_genus = genus_taxonomy_subset %>% 
+  filter(algalSampleType %in%  c("seston","phytoplankton"))  %>% 
+  select(sampleID,genus, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(genus, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_seston_genus[,3:ncol(sp_ab_matrix_seston_genus)] =
+round(sp_ab_matrix_seston_genus[,3:ncol(sp_ab_matrix_seston_genus)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_seston_genus, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_seston_genus.csv",sep=""), 
+          row.names=F) 
+
+
+
 
 
 
