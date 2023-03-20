@@ -134,7 +134,11 @@ write.csv(division_taxonomy_all,
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/division_taxonomy_all.csv",sep=""), 
           row.names=F)
 
-#subset the important variables and save two products: a vertical matrix with countData and species abundance matrices 
+#subset the important variables and save two types of products: 
+#1) a vertical matrix with all countData and periphyton growth forms
+#2) species abundance matrices for each periphyton growth form
+
+
 division_taxonomy_subset = division_taxonomy_all %>%
   select(collectDate, sampleID,algalSampleType, division, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
 
@@ -142,21 +146,82 @@ write.csv(division_taxonomy_subset,
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/division_taxonomy_subset.csv",sep=""), 
           row.names=F)
 
-sp_ab_matrix_periphyton_division = division_taxonomy_subset %>% 
+
+#epilithon
+sp_ab_matrix_epilithon_division = division_taxonomy_subset %>% 
   filter(algalSampleType == "epilithon")  %>% 
   select(sampleID,division, algalCountPermL) %>%
   group_by(sampleID) %>%
     spread(division, algalCountPermL) %>%
     replace(is.na(.),0) 
 
-sp_ab_matrix_periphyton_division[,3:ncol(sp_ab_matrix_periphyton_division)] =
-round(sp_ab_matrix_periphyton_division[,3:ncol(sp_ab_matrix_periphyton_division)], 
+sp_ab_matrix_epilithon_division[,3:ncol(sp_ab_matrix_epilithon_division)] =
+round(sp_ab_matrix_epilithon_division[,3:ncol(sp_ab_matrix_epilithon_division)], 
       digits = 0)
   
-write.csv(sp_ab_matrix_periphyton_division, 
-          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_division.csv",sep=""), 
-          row.names=F) 
+write.csv(sp_ab_matrix_epilithon_division, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epilithon_division.csv",sep=""), 
+          row.names=F)
+
+
+
+#epipsammon
+if(any(division_taxonomy_subset$algalSampleType == "epipsammon")) {
   
+sp_ab_matrix_epipsammon_division = division_taxonomy_subset %>% 
+  filter(algalSampleType == "epipsammon")  %>% 
+  select(sampleID,division, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(division, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epipsammon_division[,3:ncol(sp_ab_matrix_epipsammon_division)] =
+round(sp_ab_matrix_epipsammon_division[,3:ncol(sp_ab_matrix_epipsammon_division)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epipsammon_division, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epipsammon_division.csv",sep=""), 
+          row.names=F) 
+}
+
+#epiphyton
+if(any(division_taxonomy_subset$algalSampleType == "epiphyton")) {
+  
+sp_ab_matrix_epiphyton_division = division_taxonomy_subset %>% 
+  filter(algalSampleType == "epiphyton")  %>% 
+  select(sampleID,division, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(division, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epiphyton_division[,3:ncol(sp_ab_matrix_epiphyton_division)] =
+round(sp_ab_matrix_epiphyton_division[,3:ncol(sp_ab_matrix_epiphyton_division)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epiphyton_division, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epiphyton_division.csv",sep=""), 
+          row.names=F) 
+}
+
+#epixylon
+if(any(division_taxonomy_subset$algalSampleType == "epixylon")) {
+  
+sp_ab_matrix_epixylon_division = division_taxonomy_subset %>% 
+  filter(algalSampleType == "epixylon")  %>% 
+  select(sampleID,division, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(division, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epixylon_division[,3:ncol(sp_ab_matrix_epixylon_division)] =
+round(sp_ab_matrix_epixylon_division[,3:ncol(sp_ab_matrix_epixylon_division)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epixylon_division, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epixylon_division.csv",sep=""), 
+          row.names=F) 
+}
+
 sp_ab_matrix_seston_division = division_taxonomy_subset %>% 
   filter(algalSampleType %in%  c("seston","phytoplankton"))  %>% 
   select(sampleID,division, algalCountPermL) %>%
@@ -214,28 +279,93 @@ write.csv(family_taxonomy_all,
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/family_taxonomy_all.csv",sep=""), 
           row.names=F)
 
-#subset the important variables and save two products: a vertical matrix with countData and species abundance matrices 
+#subset the important variables and save two types of products: 
+#1) a vertical matrix with all countData and periphyton growth forms
+#2) species abundance matrices for each periphyton growth form
+
+
 family_taxonomy_subset = family_taxonomy_all %>%
-  select(collectDate, sampleID, algalSampleType, family, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
+  select(collectDate, sampleID,algalSampleType, family, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
 
 write.csv(family_taxonomy_subset, 
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/family_taxonomy_subset.csv",sep=""), 
           row.names=F)
 
-sp_ab_matrix_periphyton_family = family_taxonomy_subset %>% 
+
+#epilithon
+sp_ab_matrix_epilithon_family = family_taxonomy_subset %>% 
   filter(algalSampleType == "epilithon")  %>% 
   select(sampleID,family, algalCountPermL) %>%
   group_by(sampleID) %>%
     spread(family, algalCountPermL) %>%
     replace(is.na(.),0) 
 
-sp_ab_matrix_periphyton_family[,3:ncol(sp_ab_matrix_periphyton_family)] =
-round(sp_ab_matrix_periphyton_family[,3:ncol(sp_ab_matrix_periphyton_family)], 
+sp_ab_matrix_epilithon_family[,3:ncol(sp_ab_matrix_epilithon_family)] =
+round(sp_ab_matrix_epilithon_family[,3:ncol(sp_ab_matrix_epilithon_family)], 
       digits = 0)
   
-write.csv(sp_ab_matrix_periphyton_family, 
-          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_family.csv",sep=""), 
+write.csv(sp_ab_matrix_epilithon_family, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epilithon_family.csv",sep=""), 
+          row.names=F)
+
+
+
+#epipsammon
+if(any(family_taxonomy_subset$algalSampleType == "epipsammon")) {
+  
+sp_ab_matrix_epipsammon_family = family_taxonomy_subset %>% 
+  filter(algalSampleType == "epipsammon")  %>% 
+  select(sampleID,family, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(family, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epipsammon_family[,3:ncol(sp_ab_matrix_epipsammon_family)] =
+round(sp_ab_matrix_epipsammon_family[,3:ncol(sp_ab_matrix_epipsammon_family)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epipsammon_family, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epipsammon_family.csv",sep=""), 
           row.names=F) 
+}
+
+#epiphyton
+if(any(family_taxonomy_subset$algalSampleType == "epiphyton")) {
+  
+sp_ab_matrix_epiphyton_family = family_taxonomy_subset %>% 
+  filter(algalSampleType == "epiphyton")  %>% 
+  select(sampleID,family, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(family, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epiphyton_family[,3:ncol(sp_ab_matrix_epiphyton_family)] =
+round(sp_ab_matrix_epiphyton_family[,3:ncol(sp_ab_matrix_epiphyton_family)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epiphyton_family, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epiphyton_family.csv",sep=""), 
+          row.names=F) 
+}
+
+#epixylon
+if(any(family_taxonomy_subset$algalSampleType == "epixylon")) {
+  
+sp_ab_matrix_epixylon_family = family_taxonomy_subset %>% 
+  filter(algalSampleType == "epixylon")  %>% 
+  select(sampleID,family, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(family, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epixylon_family[,3:ncol(sp_ab_matrix_epixylon_family)] =
+round(sp_ab_matrix_epixylon_family[,3:ncol(sp_ab_matrix_epixylon_family)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epixylon_family, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epixylon_family.csv",sep=""), 
+          row.names=F) 
+}
   
 sp_ab_matrix_seston_family = family_taxonomy_subset %>% 
   filter(algalSampleType %in%  c("seston","phytoplankton"))  %>% 
@@ -295,28 +425,93 @@ write.csv(genus_taxonomy_all,
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/genus_taxonomy_all.csv",sep=""), 
           row.names=F)
 
-#subset the important variables and save two products: a vertical matrix with countData and species abundance matrices 
+#subset the important variables and save two types of products: 
+#1) a vertical matrix with all countData and periphyton growth forms
+#2) species abundance matrices for each periphyton growth form
+
+
 genus_taxonomy_subset = genus_taxonomy_all %>%
-  select(collectDate, sampleID, algalSampleType, genus, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
+  select(collectDate, sampleID,algalSampleType, genus, domainID.x,siteID.x,aquaticSiteType,habitatType,substratumSizeClass,algalCountPermL)
 
 write.csv(genus_taxonomy_subset, 
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/genus_taxonomy_subset.csv",sep=""), 
           row.names=F)
 
-sp_ab_matrix_periphyton_genus = genus_taxonomy_subset %>% 
+
+#epilithon
+sp_ab_matrix_epilithon_genus = genus_taxonomy_subset %>% 
   filter(algalSampleType == "epilithon")  %>% 
   select(sampleID,genus, algalCountPermL) %>%
   group_by(sampleID) %>%
     spread(genus, algalCountPermL) %>%
     replace(is.na(.),0) 
 
-sp_ab_matrix_periphyton_genus[,3:ncol(sp_ab_matrix_periphyton_genus)] =
-round(sp_ab_matrix_periphyton_genus[,3:ncol(sp_ab_matrix_periphyton_genus)], 
+sp_ab_matrix_epilithon_genus[,3:ncol(sp_ab_matrix_epilithon_genus)] =
+round(sp_ab_matrix_epilithon_genus[,3:ncol(sp_ab_matrix_epilithon_genus)], 
       digits = 0)
   
-write.csv(sp_ab_matrix_periphyton_genus, 
-          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_periphyton_genus.csv",sep=""), 
+write.csv(sp_ab_matrix_epilithon_genus, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epilithon_genus.csv",sep=""), 
+          row.names=F)
+
+
+
+#epipsammon
+if(any(genus_taxonomy_subset$algalSampleType == "epipsammon")) {
+  
+sp_ab_matrix_epipsammon_genus = genus_taxonomy_subset %>% 
+  filter(algalSampleType == "epipsammon")  %>% 
+  select(sampleID,genus, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(genus, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epipsammon_genus[,3:ncol(sp_ab_matrix_epipsammon_genus)] =
+round(sp_ab_matrix_epipsammon_genus[,3:ncol(sp_ab_matrix_epipsammon_genus)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epipsammon_genus, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epipsammon_genus.csv",sep=""), 
           row.names=F) 
+}
+
+#epiphyton
+if(any(genus_taxonomy_subset$algalSampleType == "epiphyton")) {
+  
+sp_ab_matrix_epiphyton_genus = genus_taxonomy_subset %>% 
+  filter(algalSampleType == "epiphyton")  %>% 
+  select(sampleID,genus, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(genus, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epiphyton_genus[,3:ncol(sp_ab_matrix_epiphyton_genus)] =
+round(sp_ab_matrix_epiphyton_genus[,3:ncol(sp_ab_matrix_epiphyton_genus)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epiphyton_genus, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epiphyton_genus.csv",sep=""), 
+          row.names=F) 
+}
+
+#epixylon
+if(any(genus_taxonomy_subset$algalSampleType == "epixylon")) {
+  
+sp_ab_matrix_epixylon_genus = genus_taxonomy_subset %>% 
+  filter(algalSampleType == "epixylon")  %>% 
+  select(sampleID,genus, algalCountPermL) %>%
+  group_by(sampleID) %>%
+    spread(genus, algalCountPermL) %>%
+    replace(is.na(.),0) 
+
+sp_ab_matrix_epixylon_genus[,3:ncol(sp_ab_matrix_epixylon_genus)] =
+round(sp_ab_matrix_epixylon_genus[,3:ncol(sp_ab_matrix_epixylon_genus)], 
+      digits = 0)
+  
+write.csv(sp_ab_matrix_epixylon_genus, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/sp_ab_matrix_epixylon_genus.csv",sep=""), 
+          row.names=F) 
+}
   
 sp_ab_matrix_seston_genus = genus_taxonomy_subset %>% 
   filter(algalSampleType %in%  c("seston","phytoplankton"))  %>% 
@@ -346,7 +541,7 @@ Biomass Data____________________________________________________________________
 Datasets for AFDM, chlorophyll, pheophytin, total carbon, total nitrogen, total phosphorus, 13C isotopes, 15N isotopes
 UNLIKE TAXONOMY, Chemical analyses of periphyton are separated by epilithon, epixylon, epipelon, epipsammon, epiphyton
 ```{r}
-site = "MCDI"
+site = "LECO"
   #Will do one site at a time
 
 setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/01_input",sep=""))
@@ -381,16 +576,18 @@ alg_full_samples = alg_full_samples %>%
 #this is the dataset to work for the areal abundance calculation 
 
 
-#For peiphyton will be multiplying each concentration per sample volume and dividing by benthic area, except for C and N isotopes. For seston analyte concentration shoul dbe good to go as it is in m V-3.
+#For periphyton will be multiplying each concentration per sample volume and dividing by benthic area, except for C and N isotopes. For seston analyte concentration should be good to go as it is already in Mass V-3.
 
 #correct for benthic area and sample volume the periphyton samples and leave as they are the seston ones and save the file in incremental folder 
+
 alg_chem_all = alg_full_samples %>%
   mutate(algalConc = 
            ifelse(is.na(benthicArea),
                   analyteConcentration, 
                   (analyteConcentration*((fieldSampleVolume/1000)/benthicArea)))) %>%
 group_by(collectDate, sampleID, analyte) %>%
-    summarise(algalConc = mean(algalConc, na.omit(TRUE))) 
+    summarise(algalConc = mean(algalConc, na.rm=TRUE)) 
+
 #units for benthic are in Mass per M-2
 #units for isotopes and seston are in Mass per L or those detailed in alg_algaeExternalLabDataPerSample file
 
@@ -398,6 +595,15 @@ group_by(collectDate, sampleID, analyte) %>%
 write.csv(alg_chem_all, 
           paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/03_incremental/alg_chem_all.csv",sep=""), 
           row.names=F)
+
+
+
+
+
+
+
+
+
 
 
 
