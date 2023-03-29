@@ -11,7 +11,7 @@ library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(tidyr)
 options(stringsAsFactors=F) # character variables are not converted to factors
 ```
 
-
+Download water chem data per site
 ```{r}
 #bring sites from the sties_list.csv file 
 sites = read.csv("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/sites_list.csv",header =F)
@@ -48,7 +48,7 @@ memory.limit(size=50000) #to set a higher value fpr memory use limit
 
 ```
 
-Simple parameters
+Summarize each parameter per site (median, min, max) 
 ```{r}
 
 #bring sites from the sties_list.csv file 
@@ -80,6 +80,59 @@ write.csv(waterchem_data_summary,
 
 
 ```
+
+Aggregate each summary per site into a single file. This is similar to what I do in the 'AllSites_MergingResults.rmd' for the turbidity and chlorophyll storm files per year but since water chem and biomas is only 1 file pers ite, it is done in each script 'OneSite_WaterChemDataCollection.rmd' and 'OneSite_BenthicDataCollection.rmd'
+```{r}
+#change accordingly for each parameter of interest
+parameter = "TP"
+final_file = "TP_AllSites"
+
+
+#bring sites from the sties_list.csv file 
+sites = read.csv("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/sites_list.csv",header =F)
+sites = as.list(sites[,1])
+
+results_matrix = as.data.frame(matrix(nrow = 0 , ncol = 5))    
+colnames(results_matrix) = c("analyte","medianConc","maxConc","minConc",
+                             "site")
+
+
+
+for (i in 1:length(sites)) {
+
+site = sites[i]
+ 
+
+waterchem_data_summary = read.csv(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/waterchem_data_summary.csv",sep=""))
+
+waterchem_data_summary_v2 = waterchem_data_summary %>%
+  filter(.,analyte == parameter) %>%
+  mutate(site = print(site))
+
+waterchem_data_summary_v2 = as.data.frame(waterchem_data_summary_v2)
+colnames(waterchem_data_summary_v2) = c("analyte","medianConc","maxConc","minConc",
+                             "site")
+results_matrix = rbind(results_matrix,waterchem_data_summary_v2)
+
+}
+
+results_matrix <- apply(results_matrix,2,as.character)
+
+write.csv(results_matrix, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/01_input/",final_file,".csv",sep=""))
+
+
+
+
+
+
+
+
+```
+
+
+
+
 
 Stochiometric ratios
 ```{r}
@@ -129,54 +182,6 @@ write.csv(waterchem_data_summary,
           row.names=F)
 
 }
-
-
-
-```
-
-```{r}
-#change accordingly for each parameter of interest
-parameter = "TP"
-final_file = "TP_AllSites"
-
-
-#bring sites from the sties_list.csv file 
-sites = read.csv("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/sites_list.csv",header =F)
-sites = as.list(sites[,1])
-
-results_matrix = as.data.frame(matrix(nrow = 0 , ncol = 5))    
-colnames(results_matrix) = c("analyte","medianConc","maxConc","minConc",
-                             "site")
-
-
-
-for (i in 1:length(sites)) {
-
-site = sites[i]
- 
-
-waterchem_data_summary = read.csv(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/waterchem_data_summary.csv",sep=""))
-
-waterchem_data_summary_v2 = waterchem_data_summary %>%
-  filter(.,analyte == parameter) %>%
-  mutate(site = print(site))
-
-waterchem_data_summary_v2 = as.data.frame(waterchem_data_summary_v2)
-colnames(waterchem_data_summary_v2) = c("analyte","medianConc","maxConc","minConc",
-                             "site")
-results_matrix = rbind(results_matrix,waterchem_data_summary_v2)
-
-}
-
-results_matrix <- apply(results_matrix,2,as.character)
-
-write.csv(results_matrix, 
-          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/01_input/",final_file,".csv",sep=""))
-
-
-
-
-
 
 
 
