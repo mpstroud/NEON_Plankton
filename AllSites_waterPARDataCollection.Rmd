@@ -1,0 +1,114 @@
+---
+title: "One Site Water Quality Data Collection"
+author: "Marc Peipoch"
+date: "9/16/2022"
+output: html_document
+---
+
+Stack downloaded data files into single .zip file
+```{r setup, include=FALSE}
+library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(tidyr)
+options(stringsAsFactors=F) # character variables are not converted to factors
+```
+
+```{r}
+#bring sites from the sties_list.csv file 
+sites = read.csv("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/sites_list.csv",header =F)
+sites = as.list(sites[25:26,1])
+
+for (i in 1:length(sites)) {
+
+site = "TOMB"
+ 
+
+setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/01_input",sep=""))
+
+dpID = "DP1.20042.001" #Photosynthetically Active Radiation (PAR) observations represent the radiation flux at wavelengths between 400-700 nm, which constitute the wavelengths that drive photosynthesis.
+
+pack = "basic"
+  #Always expanded, includes quality metrics for all of the quality assessment and quality control analyses.
+startdate = "2019-01" ; enddate = "2019-12"
+
+memory.limit(size=50000) #to set a higher value fpr memory use limit
+
+waterPAR <- loadByProduct(dpID, site, package=pack, startdate, enddate, check.size=FALSE) #returns a list with all data frames
+list2env(waterPAR, .GlobalEnv) #extract each list object into the environment (don't do this if working with multiple sites)
+
+#######save the files to SWRC server########
+write.csv(PARWS_30min, 
+          "PARWS_30min_2020.csv", 
+          row.names=F)
+
+print(site)
+}
+############################################################################################################################
+
+
+```
+
+
+Summarize PAR2020data per site/month (median) 
+```{r}
+library(lubridate)
+#bring sites from the sties_list.csv file 
+sites = read.csv("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/sites_list.csv",header =F)
+sites = as.list(sites[,1]) #list of sites
+
+#create a matrix to store the resutls
+results_matrix = data.frame(matrix(nrow = 0 , ncol = 4),stringsAsFactors = TRUE)    
+colnames(results_matrix) = c("month","day" , "accumulatedDailyPAR","site")
+
+
+for (i in 1:length(sites)) {
+
+site = sites[i]
+
+setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/01_input",sep=""))
+
+waterPAR_data = read.csv("PARWS_30min_2020.csv")
+waterPAR_data$date = as.POSIXct(waterPAR_data$startDateTime, 
+                                   format = "%Y-%m-%d %H:%M:%S")
+waterPAR_data$month = month(waterPAR_data$date)
+waterPAR_data$day = day(waterPAR_data$date)
+
+
+waterPAR_summary = waterPAR_data %>%
+  group_by(month,day) %>%
+    summarise(accumulatedDailyPAR = (sum((PARMean*1800), na.rm=TRUE)/1000000))
+
+waterPAR_summary$site = print(site)
+colnames(waterPAR_summary) = c("month","day" , "accumulatedDailyPAR","site")
+waterPAR_summary = as.data.frame(waterPAR_summary)
+results_matrix = rbind(results_matrix,waterPAR_summary)
+
+#units for the 30min average are μmol s‐1 m2‐,after I add them up the output will beign mols d-1 m-2
+}
+
+results_matrix = transform(results_matrix,site=unlist(site))
+results_matrix = as.data.frame(results_matrix)
+
+#let's save a final product as summarized data per parameter 
+write.csv(results_matrix, "R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/01_input/montlhyMeanPAR_2020_AllSites.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
