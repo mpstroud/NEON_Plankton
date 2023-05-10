@@ -1,0 +1,26 @@
+---
+title: "StormIndexPlots"
+author: "MPG"
+date: "3/7/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+data = read.csv("Chl_Turb_index_byStorm_2017_2022.csv")
+
+#remove negative FI values
+for (i in 1:nrow(data)) {
+  if(data[i,"meanFI.Chl"] )
+}
+
+if(
+  
+  
+  
+)
+subdata = data %>%
+  filter(site="ARIK") 
+
+```
+
