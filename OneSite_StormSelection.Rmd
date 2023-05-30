@@ -39,6 +39,9 @@ for (i in 1:length(storm_numb)) {
 plot_subdata = read.table("clipboard",header=T,sep="\t")
 ggplot(plot_subdata, aes(q_cms, conc, colour=time_step, size=1)) + 
   geom_point() + scale_colour_gradient(low = "93C2E2", high = "1C75BC")
+
+
+boxplot(plot_subdata$y,ylim = c(0,200))
 ```
 
 This code corrects the mismatch in storm_ID dates that I discovered while compiling the chl_HysteresisData results for the selected events. THe dates and storm_ID in the cha_AllCQData file are the one that matched the rawt data and the ones I used above for visual inspection. Therefore, the following code will use the datetime per storm_ID from the the cha_AllCQData file to then subset the selected events in chl_HysteresisData using the datetime factor, and not the storm_ID

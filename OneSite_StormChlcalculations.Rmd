@@ -10,7 +10,7 @@ patterns of hysteresis loops and validated they were indeed storm vents (signifc
 ```{r setup, include=FALSE}
 library(ggplot2) ; library(dplyr) ; detach("package:tidyr", unload=TRUE); library(broom)
 
-site="LEWI"
+site="BLUE"
 
 setwd(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product",sep=""))
 Storms_2017 = read.csv("Chlorophyll_2017/chl_AllCQData.csv", header = T)
@@ -22,7 +22,7 @@ Storms_2022 = read.csv("Chlorophyll_2022/chl_AllCQData.csv", header = T)
 
 ```
 ```{r}
-plot_data = Storms_2021
+plot_data = Storms_2019
 
 
 storm_numb = unique(plot_data$storm_id)
@@ -47,14 +47,14 @@ Therefore, the following code will use the datetime per storm_ID from the the ch
 
 1) Calculate Chl export
 2) calculate the total increase in [chl] concentration 
-3) calculate the rate of decay in [chl] after the peak
+3) calculate the C-Q slope
 4) link 1 and 2 to each storm ID event
 ```{r}
 ####################parameters to adjust
-site = "BLUE"
-year = "2020"
+site = "TOMB"
+year = "2021"
 parameter="Chlorophyll_"
-selected_storms = paste0('storm_',c(10,9,6,4))
+selected_storms = paste0('storm_',c(3))
 ###########################################
 
 cQ_file = "chl_AllCQData.csv"
@@ -85,15 +85,13 @@ increaseChl = AllCQData %>%
 AllCQData_v3 = left_join(AllCQData_v2,increaseChl,by="storm_id")
 
 
-#calculate the rate of decay in Chl concentration per storm event 
-decayChl = AllCQData %>%
+#calculate the the C-Q slope
+CQslope = AllCQData %>%
   group_by(storm_id) %>%
-  filter(row_number() >= (which.max(conc))) %>%
-  mutate(time = as.numeric(seq(0,(n()-1)*30,by=30))) %>%
-  do(decay = as.numeric(coef(lm(log(conc) ~ time,data=.))[2]))
+  do(slope = as.numeric(coef(lm(log(conc+0.01) ~ log(q_cms),data=.))[2]))
 
-decayChl = as.data.frame(decayChl)
-AllCQData_v4 = left_join(AllCQData_v3,decayChl,by="storm_id")
+CQslope = as.data.frame(CQslope)
+AllCQData_v4 = left_join(AllCQData_v3,CQslope,by="storm_id")
 
 
 #first extract the unique set of dates we need 
@@ -101,7 +99,7 @@ AllCQData_v4 = left_join(AllCQData_v3,decayChl,by="storm_id")
 subset_CQData = AllCQData_v4 %>%
   filter(., storm_id %in% selected_storms) %>%
   mutate(start=datetime) %>%
-  dplyr::select(start,totalChlexport,deltaChl,decay) 
+  dplyr::select(start,totalChlexport,deltaChl,slope) 
     
     
 #input hysteresis indices results and join by the selected dates
