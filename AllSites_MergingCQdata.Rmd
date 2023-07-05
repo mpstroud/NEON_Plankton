@@ -1,0 +1,64 @@
+---
+title: "CommunityAnalysis"
+author: "Marc Peipoch"
+date: '2023-03-22'
+output: html_document
+---
+
+packages
+```{r setup, include=FALSE}
+library(neonUtilities) ; library(dplyr) ; library(lubridate) ; library(tidyr)
+options(stringsAsFactors=F) # character variables are not converted to factors
+```
+
+Chlorophyll-a abundance
+```{r}
+#change accordingly for each parameter of interest
+initial_parameter = "alg_chl"
+parameter = "mgChlM2orL"
+final_file = "CQ_AllSites"
+
+
+#bring sites from the sties_list.csv file 
+sites = read.csv("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/sites_list.csv",header =F)
+sites = as.list(sites[,1])
+
+results_matrix = as.data.frame(matrix(nrow = 0 , ncol = 4))    
+colnames(results_matrix) = c("algalSampleType","collectDate",print(parameter),"site")
+
+
+for (i in 1:length(sites)) {
+
+site = sites[i]
+ 
+#aggregate flow data
+
+
+
+
+alg_data_site = read.csv(paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/",site,"/04_product/",initial_parameter,".csv",sep=""))
+
+Csummary = alg_data_site %>%
+  filter(algalSampleType == "seston") %>%
+  group_by(algalSampleType,collectDate) %>%
+  summarise(parameter = (mean(algalConc, na.rm=T))/1000) %>%
+  mutate(site = print(site)) #in mgC per m2 OR L
+
+Csummary = as.data.frame(Csummary)
+colnames(Csummary) = c("algalSampleType","collectDate",print(parameter),"site")
+results_matrix = rbind(results_matrix,Csummary)
+
+}
+
+results_matrix <- apply(results_matrix,2,as.character)
+
+write.csv(results_matrix, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/01_input/",final_file,".csv",sep=""))
+
+
+
+
+```
+
+
+

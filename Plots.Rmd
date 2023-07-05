@@ -1,0 +1,291 @@
+---
+title: "StormIndexPlots"
+author: "Marc Peipoch"
+date: '2023-02-14'
+output: html_document
+---
+
+Merge all files per site/year/parameter in 2 files (chl and turbidity) 
+```{r setup, include=FALSE}
+library(RColorBrewer)
+setwd("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/04_product")
+
+data = read.csv("Chl_Turb_index_byStorm_2017_2022.csv")
+
+#first substitute all the negative FI turbidity values with NAs
+data$meanFI.turb = replace(data$meanFI.turb, which(data$meanFI.turb < 0), NA)
+  
+#plot per domain/sie
+sub_data = data %>%
+  filter(site %in% c("BLWA","MAYF"))
+
+ggplot(sub_data, aes(x=meanHI.Chl, y=meanFI.Chl, color=site)) + 
+  geom_point(aes(size=event_intensity_m3hr)) +
+  scale_size_continuous(breaks = c(500, 2500, 100000, 200000),range = c(3,7)) + 
+  xlim(-1,1) + ylim(-1,1) +
+  scale_colour_manual(values = c("#CC9966", "#336666")) + 
+  theme_bw()
+
+ggplot(sub_data, aes(x=meanHI.turb, y=meanFI.turb, color=site)) + 
+  geom_point(aes(size=event_intensity_m3hr)) +
+  scale_size_continuous(range = c(3,7)) + 
+  xlim(-1,1) + ylim(-1,1) +
+  scale_colour_manual(values = c("#CC9966", "#669999","#336666", "#FFCC99")) + 
+  theme_bw()
+
+ggplot(sub_data, aes(x=meanHI.turb, y=meanFI.turb, color=site)) + 
+  geom_point(aes(size=event_intensity_m3hr)) +
+  scale_size_continuous(range = c(3,7)) + 
+  xlim(-1,1) + ylim(-1,1) +
+  scale_colour_manual(values = c("#CC9966", "#669999","#336666", "#FFCC99")) + 
+  theme_bw()
+
+
+#CC9966 marro fosc
+#669999 blau clar
+#336666 blau fosc
+#FFCC99 marro clar
+
+
+
+#boxplot per domain/sie
+library(ggpubr)
+theme_set(theme_pubr())
+
+###################################
+sub_data = data %>%
+  filter(site %in% c("CUPE","GUIL"))
+
+a = ggplot(sub_data, aes(x=site, y=meanHI.Chl, fill=site)) +
+    geom_boxplot() +
+    scale_fill_manual(values = c("#FFCC00", "#FF6600")) +  
+    theme_classic() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +  ylim(-1,1) 
+
+b = ggplot(sub_data, aes(x=site, y=meanFI.Chl, fill=site)) +
+    geom_boxplot() +
+    scale_fill_manual(values = c("#FFCC00", "#FF6600")) +  
+    theme_classic() +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +  ylim(-1,1) 
+
+ggarrange(a, b, labels = c("A", "B"),
+                    ncol = 2, nrow = 1)
+
+```
+
+NMDS for gorthw forms
+```{r}
+library(vegan) ;library(ggplot2); library(viridis) ;library(RColorBrewer);library(dplyr)
+
+
+NMDS_data = read.table("clipboard",header=T,sep="\t") #upload data
+NMDS_data = read.csv("family_matrix.csv")
+
+nmds_results <- metaMDS(comm = NMDS_data[ ,6:43],  # Remove the first row of site names  
+                        distance = "bray",       # Specify a distance
+                        try = 10)               # Number of iterations 
+
+# Extract score values for where sites are located.
+data_scores <- as.data.frame(scores(nmds_results))
+
+# Now add the first column with sites 
+data_scores <- cbind(data_scores, NMDS_data[, 1])
+colnames(data_scores)[3] <- "Domain"
+
+# Extract loading for species/growth forms
+species_scores <- as.data.frame(scores(nmds_results, "species"))
+
+# Add a column equivalent to the row name to create species labels
+species_scores$species <- rownames(species_scores)
+
+# Now we can build the plot!
+
+ggplot() +
+
+  geom_point(data = data_scores, aes(x = NMDS1, y = NMDS2, 
+                                     color = Domain), size = 5) +
+  scale_colour_manual(values=c("#603913","#8DC63F", "#93C2E2","#FFFFFF", "#2BB673","#F7941E",
+                    "#DBCA65","#BCBEC0","#58595B","#A97C50","#1C75BC","#C2B59B",
+                    "#000000","#009444","#AFAF3A","#7851C4")) +
+  theme_classic() 
+
+
+#Median benthic algae by group
+BenthicChl_data = read.table("clipboard",header=T,sep="\t") #upload data
+
+BenthicChl_data_v2 = BenthicChl_data %>%
+  group_by(site) %>%
+  summarise(medianChl = median(mgChlM2orL,na.rm=T),
+            maxChl = max(mgChlM2orL), minChl = min(mgChlM2orL) )
+
+
+write.csv(BenthicChl_data_v2, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/03_incremental/BenthicChl_data.csv",sep=""))
+
+deltaChl_data = read.table("clipboard",header=T,sep="\t") #upload data
+
+deltaChl_data_v2 = deltaChl_data %>%
+  group_by(site) %>%
+  summarise(medianChl = median(totalChlexport,na.rm=T),
+            maxChl = max(totalChlexport), minChl = min(totalChlexport) )
+
+
+write.csv(deltaChl_data_v2, 
+          paste("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/03_incremental/deltaChl_data.csv",sep=""))
+
+
+```
+
+```{r}
+############################Simulating data for the required length comparison
+
+#bring in data manually for now
+
+exp_data =  read.table("clipboard",header=T,sep="\t") #upload data
+ben_data =  read.table("clipboard",header=T,sep="\t") #upload data
+
+sum_exp_data = exp_data %>%
+  group_by(site) %>%
+  summarise(temp_mean = mean(log(exported_chl),na.rm=T),
+            temp_sd = sd(log(exported_chl),na.rm=T))
+
+sum_ben_data = ben_data %>%
+  group_by(site) %>%
+  summarise(temp_mean = mean(log(benthic_chl/1000),na.rm=T),
+            temp_sd = sd(log(benthic_chl),na.rm=T))
+
+
+#list of NEON sites
+sites = read.csv("R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/NEONData/sites_list.csv",header =F)
+sites = as.list(sites[,1])
+
+#create a matrix to store the results
+results_matrix = data.frame(matrix(nrow = 0 , ncol = 2),stringsAsFactors = TRUE)    
+colnames(results_matrix) = c("estimated_length","site")
+
+  
+for (i in 1:length(sites)) {
+
+ind_site = sites[i]
+
+
+sim_exp = sum_exp_data %>%
+  filter(site==ind_site) 
+
+sim_exp_data = rnorm(1000,
+                  as.numeric(sim_exp[1,2]),
+                  as.numeric(sim_exp[1,3]))
+  
+sim_ben = sum_ben_data %>%
+  filter(site==ind_site) 
+
+sim_ben_data = rnorm(1000,
+                  as.numeric(sim_ben[1,2]),
+                  as.numeric(sim_ben[1,3]))
+ 
+temp = as.data.frame(replicate(1000, (exp(sample(sim_exp_data,1,replace=FALSE)))/(exp(sample(sim_ben_data,1,replace=FALSE)))))
+#since I use grams exported then I don't have to transform into km, the result is already in km
+
+temp$site = print(ind_site)
+colnames(temp) = c("estimated_area","site")
+temp = as.data.frame(temp,)
+results_matrix = rbind(results_matrix,temp)
+
+}
+    
+results_matrix = transform(results_matrix,site=unlist(site))
+results_matrix$site = as.factor(results_matrix$site)
+results_matrix$estimated_area = as.numeric(results_matrix$estimated_area)
+
+
+########ggplot of histograms:
+
+library(tidyverse)
+library(hrbrthemes)
+library(viridis)
+library(forcats)
+install.packages("devtools")
+library(devtools)
+install_github("easyGgplot2", "kassambara")
+
+library(easyGgplot2)
+library(vegan)
+
+
+
+results_matrix_subset =  results_matrix %>%
+  filter(site == "REDB") 
+ggplot(results_matrix_subset, aes(x=log(estimated_area))) + 
+  geom_histogram(color="black", fill="white") +
+  geom_vline(aes(xintercept=log(4470)),
+            color="blue", linetype="dashed", size=1) +
+  theme_bw()
+
+write.csv(results_matrix,"R:/EcosystemEcologyLab/MSAPLANKTONdataDirectory/DataInDevelopment/Aggregations/AggregatedNEONdata/03_incremental/Sim_results.csv")
+
+
+
+commdata = read.table("clipboard",header=T,sep="\t")
+
+subcommm = commdata[,4:ncol(commdata)]
+m_subcommm = as.matrix(subcommm)
+
+set.seed(123)
+nmds = metaMDS(m_subcommm, distance = "bray")
+nmds
+
+data.scores = as.data.frame(scores(nmds)$sites)
+data.scores$Type = commdata$Type
+data.scores$Site = commdata$Site
+
+ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+     geom_point(data = data.scores, aes(colour = Type), size = 3, alpha = 0.5) + 
+     scale_colour_manual(values = c("orange", "steelblue")) + 
+     theme(axis.title = element_text(size = 10, face = "bold", colour = "grey30"), 
+     panel.background = element_blank(), panel.border = element_rect(fill = NA, colour = "grey30"), 
+     axis.ticks = element_blank(), axis.text = element_blank(), legend.key = element_blank(), 
+     legend.title = element_text(size = 10, face = "bold", colour = "grey30"), 
+     legend.text = element_text(size = 9, colour = "grey30")) +
+     labs(colour = "Type")
+
+
+
+```
+```{r}
+subcommm = commdata %>%
+  filter(Site == "WLOU")
+
+subcommm_v2 = subcommm[,4:ncol(subcommm)]
+m_subcommm_v2 = as.matrix(subcommm_v2)
+
+anosim(m_subcommm_v2, subcommm$Type, distance = "bray", permutations = 999)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
