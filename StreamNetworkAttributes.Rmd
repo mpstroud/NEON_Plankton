@@ -1,0 +1,123 @@
+---
+title: "Stream Information from NHDplusV2"
+author: "Marc Peipoch"
+date: '2023-02-14'
+output: html_document
+---
+
+Download and calculate some channel network attributes per site from the NHDplusV2 using the nhdplusTools package
+```{r setup, include=FALSE}
+
+install.packages("nhdplusTools")
+
+library(nhdplusTools)
+library(sf)
+	
+```
+```{r}
+start_point <- st_sfc(st_point(c(-111.79765,40.78374)), crs = 4269)
+start_comid <- discover_nhdplus_id(start_point)
+
+flowline <- navigate_nldi(list(featureSource = "comid", 
+                               featureID = start_comid), 
+                          mode = "upstreamTributaries", 
+                          distance_km = 1000)
+
+subset_file <- tempfile(fileext = ".gpkg")
+subset <- subset_nhdplus(comids = as.integer(flowline$UT$nhdplus_comid),
+                         output_file = subset_file,
+                         nhdplus_data = "download", 
+                         flowline_only = FALSE,
+                         return_data = TRUE, overwrite = TRUE)
+
+
+
+flowline <- subset$NHDFlowline_Network
+catchment <- subset$CatchmentSP
+waterbody <- subset$NHDWaterbody
+
+
+fpath <- get_tocomid(
+  dplyr::select(flowline, comid, fromnode, tonode, divergence, ftype,
+                areasqkm, lengthkm, gnis_id)
+)
+
+
+
+
+
+
+# Print
+head(fpath <- dplyr::select(sf::st_cast(fpath, "LINESTRING"), 
+                     -tonode, -fromnode, -divergence, -ftype))
+
+head(fpath <- get_sorted(fpath, split = TRUE))
+
+fpath['hydrosequence'] <- seq(nrow(fpath), 1)
+plot(fpath['hydrosequence'], key.pos = NULL)
+
+
+fpath[["arbolatesum"]] <- calculate_arbolate_sum(
+  dplyr::select(fpath, 
+                ID = comid, toID = tocomid, length = lengthkm))
+
+
+sum(fpath$lengthkm)
+
+
+flowline$streamorde = as.factor(flowline$streamorde)
+
+flowline %>%
+  group_by(streamorde) %>%
+  dplyr::summarise(., sum(lengthkm))
+
+
+
+
+
+area_data =  read.table("clipboard",header=T,sep="\t") #upload data
+
+area_data %>%
+  ggplot( aes(x=site, y=log(area), fill=site)) + 
+    geom_col() +
+    xlab("site") +
+    theme(legend.position="none") +
+    xlab("") +
+    xlab("")
+
+
+
+````
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
